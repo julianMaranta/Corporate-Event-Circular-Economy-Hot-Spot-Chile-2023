@@ -1,11 +1,17 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 
 const schema = a.schema({
-  Todo: a
+  Registration: a
     .model({
-      content: a.string(),
-      dueDate: a.datetime(),
-      status: a.enum(["PENDIENTE", "EN_PROCESO", "FINALIZADA"]),
+      firstName: a.string().required(),
+      lastName: a.string().required(),
+      identificationNumber: a.string().required(),
+      identificationType: a.enum(["RUT", "DNI", "PASSPORT"]),
+      email: a.email().required(),
+      occupation: a.string().required(),
+      industryType: a.string().required(),
+      eventDate: a.date().required(),
+      eventTime: a.string().required(),
     })
     .authorization((allow) => [allow.publicApiKey()]),
 });

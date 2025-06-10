@@ -5,329 +5,328 @@ import "./App.css";
 
 const client = generateClient<Schema>();
 
-type TodoStatus = "PENDIENTE" | "EN_PROCESO" | "FINALIZADA";
+export type IdentificationType = "RUT" | "DNI" | "PASSPORT";
 
-type Todo = {
+export type Registration = {
   id: string;
-  content: string;
-  dueDate: string | null;
-  status: TodoStatus;
+  firstName: string;
+  lastName: string;
+  identificationNumber: string;
+  identificationType: IdentificationType;
+  email: string;
+  occupation: string;
+  industryType: string;
+  eventDate: string;
+  eventTime: string;
   createdAt: string;
   updatedAt: string;
 };
 
 function App() {
-  const [todos, setTodos] = useState<Todo[]>([]);
-  const [newTodo, setNewTodo] = useState({
-    content: "",
-    dueDate: ""
-  });
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editData, setEditData] = useState<Omit<Todo, "id" | "createdAt" | "updatedAt">>({
-    content: "",
-    dueDate: null,
-    status: "PENDIENTE"
-  });
+  const [registrations, setRegistrations] = useState<Registration[]>([]);
+const [newRegistration, setNewRegistration] = useState({
+  firstName: "",
+  lastName: "",
+  identificationNumber: "",
+  identificationType: "RUT" as IdentificationType, // Explicitly type this
+  email: "",
+  occupation: "",
+  industryType: "",
+  eventDate: "",
+  eventTime: ""
+});
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState<TodoStatus | "TODAS">("TODAS");
 
-  // Carga inicial y suscripción a cambios
+  // Available time slots
+  const timeSlots = [
+    "09:00", "10:30", "12:00", 
+    "14:00", "15:30", "17:00"
+  ];
+
+  // Industry types
+  const industryTypes = [
+    "Manufacturing",
+    "Retail",
+    "Energy",
+    "Construction",
+    "Technology",
+    "Agriculture",
+    "Food & Beverage",
+    "Transportation",
+    "Other"
+  ];
+
+  // Load initial data
   useEffect(() => {
-    const fetchTodos = async () => {
+    const fetchRegistrations = async () => {
       setIsLoading(true);
       try {
-        const { data: initialTodos } = await client.models.Todo.list();
-        setTodos(initialTodos as Todo[]);
+        const { data } = await client.models.Registration.list();
+        setRegistrations(data as Registration[]);
       } catch (error) {
-        console.error("Error fetching todos:", error);
+        console.error("Error fetching registrations:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchTodos();
+    fetchRegistrations();
 
-    const subscription = client.models.Todo.observeQuery().subscribe({
+    const subscription = client.models.Registration.observeQuery().subscribe({
       next: ({ items }) => {
-        setTodos(items as Todo[]);
+        setRegistrations(items as Registration[]);
       }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // Función optimizada para crear tarea
-  const handleCreate = async () => {
-    if (!newTodo.content.trim()) return;
-    
-    // Optimistic UI update
-    const tempId = Date.now().toString();
-    setTodos(prev => [
-      ...prev,
-      {
-        id: tempId,
-        content: newTodo.content,
-        dueDate: newTodo.dueDate ? new Date(newTodo.dueDate).toISOString() : null,
-        status: "PENDIENTE",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
-    ]);
-    
-    try {
-      await client.models.Todo.create({
-        content: newTodo.content,
-        dueDate: newTodo.dueDate ? new Date(newTodo.dueDate).toISOString() : null,
-        status: "PENDIENTE"
-      });
-    } catch (error) {
-      // Revertir si hay error
-      setTodos(prev => prev.filter(todo => todo.id !== tempId));
-      alert("Error al crear la tarea");
-    }
-    
-    setNewTodo({ content: "", dueDate: "" });
-  };
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
 
-  // Función para iniciar edición
-  const startEditing = (todo: Todo) => {
-    setEditingId(todo.id);
-    setEditData({
-      content: todo.content,
-      dueDate: todo.dueDate,
-      status: todo.status
-    });
-  };
-
-  // Función para actualizar tarea
-  const handleUpdate = async () => {
-    if (!editingId) return;
-    
-    // Optimistic UI update
-    setTodos(prev =>
-      prev.map(todo =>
-        todo.id === editingId
-          ? { ...todo, ...editData }
-          : todo
-      )
-    );
-    
     try {
-      await client.models.Todo.update({
-        id: editingId,
-        ...editData
+      await client.models.Registration.create({
+        ...newRegistration,
+        eventDate: new Date(newRegistration.eventDate).toISOString()
       });
-      setEditingId(null);
+      
+      // Reset form
+      setNewRegistration({
+        firstName: "",
+        lastName: "",
+        identificationNumber: "",
+        identificationType: "RUT",
+        email: "",
+        occupation: "",
+        industryType: "",
+        eventDate: "",
+        eventTime: ""
+      });
+      
+      alert("Registration successful! Thank you for signing up.");
     } catch (error) {
-      // Recargar los datos si hay error
-      const { data: refreshedTodos } = await client.models.Todo.list();
-      setTodos(refreshedTodos as Todo[]);
-      alert("Error al actualizar la tarea");
+      console.error("Error creating registration:", error);
+      alert("There was an error processing your registration. Please try again.");
     }
   };
 
-  // Función para eliminar tarea
+  const validateForm = () => {
+    if (!newRegistration.firstName || !newRegistration.lastName) {
+      alert("Please enter your full name");
+      return false;
+    }
+    
+    if (!newRegistration.identificationNumber) {
+      alert("Please enter your identification number");
+      return false;
+    }
+    
+    if (!newRegistration.email.includes("@")) {
+      alert("Please enter a valid email address");
+      return false;
+    }
+    
+    if (!newRegistration.eventDate || !newRegistration.eventTime) {
+      alert("Please select a date and time for the event");
+      return false;
+    }
+    
+    return true;
+  };
+
   const handleDelete = async (id: string) => {
-    // Optimistic UI update
-    setTodos(prev => prev.filter(todo => todo.id !== id));
+    if (!window.confirm("Are you sure you want to delete this registration?")) return;
     
     try {
-      await client.models.Todo.delete({ id });
+      await client.models.Registration.delete({ id });
     } catch (error) {
-      // Recargar los datos si hay error
-      const { data: refreshedTodos } = await client.models.Todo.list();
-      setTodos(refreshedTodos as Todo[]);
-      alert("Error al eliminar la tarea");
+      console.error("Error deleting registration:", error);
+      alert("Error deleting registration");
     }
   };
-
-  // Función para actualizar estado
-  const handleStatusChange = async (id: string, status: TodoStatus) => {
-    // Optimistic UI update
-    setTodos(prev =>
-      prev.map(todo =>
-        todo.id === id ? { ...todo, status } : todo
-      )
-    );
-    
-    try {
-      await client.models.Todo.update({ id, status });
-    } catch (error) {
-      // Recargar los datos si hay error
-      const { data: refreshedTodos } = await client.models.Todo.list();
-      setTodos(refreshedTodos as Todo[]);
-    }
-  };
-
-  // Formateador de fecha
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return "Sin fecha";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("es-ES", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
-    });
-  };
-
-  // Filtrar tareas según el estado seleccionado
-  const filteredTodos = filter === "TODAS" 
-    ? todos 
-    : todos.filter(todo => todo.status === filter);
 
   return (
     <div className="app-container">
       <header className="app-header">
-        <h1 className="app-title">Gestor de Tareas</h1>
-        <p className="app-subtitle">Organiza tu día de manera eficiente</p>
+        <h1 className="app-title">Circular Economy Hot Spot Chile 2023</h1>
+        <p className="app-subtitle">International Business Event Registration</p>
       </header>
       
-      <div className="todo-form">
-        <input
-          type="text"
-          value={newTodo.content}
-          onChange={(e) => setNewTodo({...newTodo, content: e.target.value})}
-          placeholder="¿Qué necesitas hacer?"
-          className="todo-input"
-          onKeyPress={(e) => e.key === "Enter" && handleCreate()}
-        />
-        <input
-          type="datetime-local"
-          value={newTodo.dueDate}
-          onChange={(e) => setNewTodo({...newTodo, dueDate: e.target.value})}
-          className="todo-date-input"
-        />
-        <button onClick={handleCreate} className="add-button">
-          <span className="button-icon">+</span> Añadir Tarea
-        </button>
-      </div>
-
-      <div className="filter-buttons">
-        <button 
-          onClick={() => setFilter("TODAS")} 
-          className={`filter-button ${filter === "TODAS" ? "active" : ""}`}
-        >
-          Todas
-        </button>
-        <button 
-          onClick={() => setFilter("PENDIENTE")} 
-          className={`filter-button ${filter === "PENDIENTE" ? "active" : ""}`}
-        >
-          Pendientes
-        </button>
-        <button 
-          onClick={() => setFilter("EN_PROCESO")} 
-          className={`filter-button ${filter === "EN_PROCESO" ? "active" : ""}`}
-        >
-          En Proceso
-        </button>
-        <button 
-          onClick={() => setFilter("FINALIZADA")} 
-          className={`filter-button ${filter === "FINALIZADA" ? "active" : ""}`}
-        >
-          Finalizadas
-        </button>
-      </div>
-
-      {isLoading ? (
-        <div className="loading-spinner">
-          <div className="spinner"></div>
-          <p>Cargando tareas...</p>
+      <div className="registration-form">
+        <h2>Registration Form</h2>
+        
+        <div className="form-group">
+          <label>First Name*</label>
+          <input
+            type="text"
+            value={newRegistration.firstName}
+            onChange={(e) => setNewRegistration({...newRegistration, firstName: e.target.value})}
+            placeholder="Enter your first name"
+            required
+          />
         </div>
-      ) : filteredTodos.length === 0 ? (
-        <div className="empty-state">
-          <img src="https://cdn-icons-png.flaticon.com/512/4076/4076478.png" alt="No tasks" className="empty-image" />
-          <p>No hay tareas {filter !== "TODAS" ? `en estado ${filter.toLowerCase()}` : ""}</p>
-          <button onClick={() => setFilter("TODAS")} className="primary-button">
-            Ver todas las tareas
-          </button>
+        
+        <div className="form-group">
+          <label>Last Name*</label>
+          <input
+            type="text"
+            value={newRegistration.lastName}
+            onChange={(e) => setNewRegistration({...newRegistration, lastName: e.target.value})}
+            placeholder="Enter your last name"
+            required
+          />
         </div>
-      ) : (
-        <ul className="todo-list">
-          {filteredTodos.map((todo) => (
-            <li 
-              key={todo.id} 
-              className={`todo-item ${todo.status.toLowerCase()} ${editingId === todo.id ? "editing" : ""}`}
+        
+        <div className="form-row">
+          <div className="form-group">
+            <label>ID Type*</label>
+           <select
+  value={newRegistration.identificationType}
+  onChange={(e) => setNewRegistration({
+    ...newRegistration, 
+    identificationType: e.target.value as IdentificationType
+  })}
+>
+  <option value="RUT">RUT (Chile)</option>
+  <option value="DNI">DNI (Argentina)</option>
+  <option value="PASSPORT">Passport</option>
+</select>
+          </div>
+          
+          <div className="form-group">
+            <label>ID Number*</label>
+            <input
+              type="text"
+              value={newRegistration.identificationNumber}
+              onChange={(e) => setNewRegistration({...newRegistration, identificationNumber: e.target.value})}
+              placeholder={
+                newRegistration.identificationType === "RUT" ? "12345678-9" : 
+                newRegistration.identificationType === "DNI" ? "12345678" : "Passport number"
+              }
+              required
+            />
+          </div>
+        </div>
+        
+        <div className="form-group">
+          <label>Email*</label>
+          <input
+            type="email"
+            value={newRegistration.email}
+            onChange={(e) => setNewRegistration({...newRegistration, email: e.target.value})}
+            placeholder="your.email@example.com"
+            required
+          />
+        </div>
+        
+        <div className="form-group">
+          <label>Occupation*</label>
+          <input
+            type="text"
+            value={newRegistration.occupation}
+            onChange={(e) => setNewRegistration({...newRegistration, occupation: e.target.value})}
+            placeholder="Your current job position"
+            required
+          />
+        </div>
+        
+        <div className="form-group">
+          <label>Industry Type*</label>
+          <select
+            value={newRegistration.industryType}
+            onChange={(e) => setNewRegistration({...newRegistration, industryType: e.target.value})}
+            required
+          >
+            <option value="">Select your industry</option>
+            {industryTypes.map(type => (
+              <option key={type} value={type}>{type}</option>
+            ))}
+          </select>
+        </div>
+        
+        <div className="form-row">
+          <div className="form-group">
+            <label>Event Date*</label>
+            <input
+              type="date"
+              value={newRegistration.eventDate}
+              onChange={(e) => setNewRegistration({...newRegistration, eventDate: e.target.value})}
+              min="2023-01-01"
+              max="2023-12-31"
+              required
+            />
+          </div>
+          
+          <div className="form-group">
+            <label>Time Slot*</label>
+            <select
+              value={newRegistration.eventTime}
+              onChange={(e) => setNewRegistration({...newRegistration, eventTime: e.target.value})}
+              required
             >
-              {editingId === todo.id ? (
-                <div className="edit-form">
-                  <input
-                    type="text"
-                    value={editData.content}
-                    onChange={(e) => setEditData({...editData, content: e.target.value})}
-                    className="todo-input"
-                    autoFocus
-                  />
-                  <input
-                    type="datetime-local"
-                    value={editData.dueDate ? editData.dueDate.split('.')[0] : ''}
-                    onChange={(e) => setEditData({...editData, dueDate: e.target.value})}
-                    className="todo-date-input"
-                  />
-                  <select
-                    value={editData.status}
-                    onChange={(e) => setEditData({...editData, status: e.target.value as TodoStatus})}
-                    className="status-select"
-                  >
-                    <option value="PENDIENTE">Pendiente</option>
-                    <option value="EN_PROCESO">En Proceso</option>
-                    <option value="FINALIZADA">Finalizada</option>
-                  </select>
-                  <div className="button-group">
-                    <button onClick={handleUpdate} className="save-button">
-                      Guardar
+              <option value="">Select a time</option>
+              {timeSlots.map(time => (
+                <option key={time} value={time}>{time}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        
+        <button onClick={handleSubmit} className="submit-button">
+          Register for Event
+        </button>
+      </div>
+
+      <div className="registrations-list">
+        <h2>Current Registrations</h2>
+        
+        {isLoading ? (
+          <div className="loading-spinner">
+            <div className="spinner"></div>
+            <p>Loading registrations...</p>
+          </div>
+        ) : registrations.length === 0 ? (
+          <div className="empty-state">
+            <p>No registrations yet</p>
+          </div>
+        ) : (
+          <table className="registrations-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>ID</th>
+                <th>Email</th>
+                <th>Occupation</th>
+                <th>Industry</th>
+                <th>Event Time</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {registrations.map(reg => (
+                <tr key={reg.id}>
+                  <td>{reg.firstName} {reg.lastName}</td>
+                  <td>{reg.identificationType}: {reg.identificationNumber}</td>
+                  <td>{reg.email}</td>
+                  <td>{reg.occupation}</td>
+                  <td>{reg.industryType}</td>
+                  <td>
+                    {new Date(reg.eventDate).toLocaleDateString()} at {reg.eventTime}
+                  </td>
+                  <td>
+                    <button 
+                      onClick={() => handleDelete(reg.id)} 
+                      className="delete-button"
+                    >
+                      Delete
                     </button>
-                    <button onClick={() => setEditingId(null)} className="cancel-button">
-                      Cancelar
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="todo-content">
-                  <div className="todo-header">
-                    <h3 className="todo-title">{todo.content}</h3>
-                    <span className={`status-badge ${todo.status.toLowerCase()}`}>
-                      {todo.status.replace("_", " ").toLowerCase()}
-                    </span>
-                  </div>
-                  
-                  <div className="todo-details">
-                    <p className="due-date">
-                      <span className="detail-icon">📅</span>
-                      {formatDate(todo.dueDate)}
-                    </p>
-                    <div className="todo-actions">
-                      <select
-                        value={todo.status}
-                        onChange={(e) => handleStatusChange(todo.id, e.target.value as TodoStatus)}
-                        className="status-select"
-                      >
-                        <option value="PENDIENTE">Pendiente</option>
-                        <option value="EN_PROCESO">En Proceso</option>
-                        <option value="FINALIZADA">Finalizada</option>
-                      </select>
-                      <button 
-                        onClick={() => startEditing(todo)} 
-                        className="edit-button"
-                      >
-                        ✏️ Editar
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(todo.id)} 
-                        className="delete-button"
-                      >
-                        🗑️ Eliminar
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   );
 }
