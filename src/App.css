@@ -39,7 +39,7 @@ body::before {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(255, 255, 255, 0.85);
+  background: url('./fondo.jpg') no-repeat center center fixed;
   z-index: -1;
 }
 
@@ -53,7 +53,7 @@ body::before {
   max-width: 800px;
   margin: 2rem auto;
   padding: 2rem;
-  background-color: rgba(255, 255, 255, 0.95);
+  background-color: #addef7;
   border-radius: 12px;
   box-shadow: var(--shadow);
   backdrop-filter: blur(2px);
