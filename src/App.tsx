@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { Schema } from "../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
 import "./App.css";
+import logo from './logo.png';
 
 const client = generateClient<Schema>();
 
@@ -148,7 +149,7 @@ const [newRegistration, setNewRegistration] = useState({
   return (
     <div className="app-container">
       <header className="app-header">
-        <h1 className="app-title">Circular Economy Hot Spot Chile 2023</h1>
+        <img src={logo} alt="Circular Economy Hot Spot Chile 2023" className="event-logo" />
         <p className="app-subtitle">International Business Event Registration</p>
       </header>
       
