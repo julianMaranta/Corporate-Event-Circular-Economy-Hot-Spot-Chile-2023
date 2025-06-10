@@ -23,7 +23,7 @@ body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   line-height: 1.6;
   color: var(--text-color);
-  background: url('fondo.jpg') no-repeat center center fixed;
+  background: url('./fondo.jpg') no-repeat center center fixed;
   background-size: cover;
   display: flex;
   justify-content: center;
@@ -81,18 +81,22 @@ body::before {
 
 /* ===== FORM STYLES ===== */
 .registration-form {
-  background-color: white;
+  background-color: rgba(255, 255, 255, 0.9);
   padding: 2rem;
   border-radius: 12px;
   box-shadow: var(--shadow);
   margin-bottom: 2rem;
+  border: 1px solid var(--primary-light);
 }
 
 .registration-form h2 {
   color: var(--primary-dark);
   margin-bottom: 1.5rem;
   font-size: 1.5rem;
+  border-bottom: 2px solid var(--primary-light);
+  padding-bottom: 0.5rem;
 }
+
 
 .form-group {
   margin-bottom: 1.5rem;
@@ -148,26 +152,29 @@ body::before {
 .submit-button:hover {
   background-color: var(--primary-color);
   transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(36, 180, 233, 0.3);
 }
 
 /* ===== REGISTRATIONS TABLE ===== */
 .registrations-list {
-  background-color: white;
+  background-color: rgba(255, 255, 255, 0.9);
   padding: 2rem;
   border-radius: 12px;
   box-shadow: var(--shadow);
+  border: 1px solid var(--primary-light);
 }
 
 .registrations-list h2 {
   color: var(--primary-dark);
   margin-bottom: 1.5rem;
   font-size: 1.5rem;
+  border-bottom: 2px solid var(--primary-light);
+  padding-bottom: 0.5rem;
 }
 
-.registrations-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 1rem;
+.registrations-table th {
+  background-color: var(--primary-light);
+  color: var(--text-color);
 }
 
 .registrations-table th,
@@ -175,12 +182,6 @@ body::before {
   padding: 1rem;
   text-align: left;
   border-bottom: 1px solid var(--border-color);
-}
-
-.registrations-table th {
-  background-color: var(--primary-light);
-  font-weight: 600;
-  color: var(--text-color);
 }
 
 .registrations-table tr:hover {
